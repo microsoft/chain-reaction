@@ -1,0 +1,45 @@
+# Ignore compiled Python files
+*.pyc
+# Ignore checkpoints and 
+.ipynb_checkpoints
+.chroma
+# Ignore zip files
+*.zip
+# Ignore Python cache directory
+**/__pycache__/**
+
+# Ignore virtual environment directories
+venv/
+env/
+
+# Ignore IDE and editor-specific files
+.vscode/
+.idea/
+
+# Ignore project-specific env files
+.env
+
+# Ignore log files
+*.log
+
+# Ignore package build directories
+dist/
+build/
+
+
+# Environments
+.env
+.venv
+venv2
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+vectorstore
+# Environment in subdirectories 
+**/*.env 
+!**/example.env
+
+#mlruns
+mlruns/
