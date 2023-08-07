@@ -26,6 +26,7 @@ Experiment-QnAoverDocs-AI
 ```
 
 *** Note: For specific logic to allow experimenting, add `bot_logic.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
+
 1. Install miniconda and create a virtual environment
 ```bash
 conda env update -f environment.yaml
