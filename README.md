@@ -14,15 +14,15 @@ Some assumptions are made:
 ## Setup
 
 ```cmd
-Experiment-QnAoverDocs-AI                             
-│   chain_reaction.py            
-│   config.yaml                  
-│   environment.yaml              
-│   evals.py                     
+chain-reaction                            
+|---chain_reaction.py            
+│---config.yaml                  
+│---environment.yaml              
+│---evals.py                     
 ├───bot                          
-│   │   example.env         
-│   │   bot_logic.py                
-│   |   benchmark_QA.csv         
+    │---example.env         
+    │---bot_logic.py                
+    │---benchmark_QA.csv         
 ```
 
 *** Note: For specific logic to allow experimenting, add `bot_logic.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
