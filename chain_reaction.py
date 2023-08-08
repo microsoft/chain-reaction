@@ -27,6 +27,7 @@ import warnings
 import pdb
 
 warnings.simplefilter('ignore')
+RETRIES = 2
 
 def call_function_get_frame(func, *args, **kwargs):
       """
@@ -87,6 +88,9 @@ scoring_methods = [key for key, val in config['scoring'].items() if val == True]
 for method in scoring_methods:
     df_result[method] = np.nan
 
+df_result['chain_error'] = np.nan
+df_result['metric_error'] = np.nan
+
 df_result['time'] = np.nan
 
 # Initialize function vars to log and sequence 
@@ -100,7 +104,9 @@ for key, val in config['chain_instruct'].items():
 with mlflow.start_run(run_name=mlflow_run_name) as run:
     mlflow.log_params(config['constants'])
     mlflow.log_param('sequence', list(config['chain_instruct'].keys()))
+    grace_stop = False
     for i, row in df.iterrows():
+ 
         raw_msg = row['Question']
         a_true = row['Answer']
 
@@ -116,59 +122,73 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                 fxn = namespace_decorator(chain_fxns.__dict__[key])
                 
                 # Run chain function with args from schema
-                try:
-                    result_module, result = fxn(
-                        *(link[inp] for inp in val['in'])
-                    )
+                for attempt in range(RETRIES):
+                    # Rate limit
+                    time.sleep(0.1)
 
-                    # Check if config['mlflow_logging_vars'] keys are in result_module
-                    for hyp_key in config['function_logging_vars']:
-                        if hyp_key in result_module.__dict__.keys():
-                            df_result[hyp_key][i] = result_module.__dict__[hyp_key]
+                    try:
+                        result_module, result = fxn(
+                            *(link[inp] for inp in val['in'])
+                        )
+
+                        # Check if config['function_logging_vars'] keys are in result_module
+                        for hyp_key in config['function_logging_vars']:
+                            if hyp_key in result_module.__dict__.keys():
+                                df_result[hyp_key][i] = result_module.__dict__[hyp_key]
+                        
+                        # Update link dictionary with outputs
+                        if len(result) > 1 and len(val['out']) > 1:
+                            [link.update({outp: result[i]}) for i, outp in enumerate(val['out'])]
+                        else:
+                            [link.update({outp: result}) for outp in val['out']]
                     
-                    # Update link dictionary with outputs
-                    if len(result) > 1 and len(val['out']) > 1:
-                        [link.update({outp: result[i]}) for i, outp in enumerate(val['out'])]
+                    except Exception:
+                        print("Error at chain {}".format(key))
+                        print(traceback.format_exc())
+                        df_result['chain_error'][i] = traceback.format_exc()
+                        
+                        if attempt == RETRIES - 1:
+                            grace_stop = True
                     else:
-                        [link.update({outp: result}) for outp in val['out']]
-
-                except Exception:
-                    print("Error at chain {}".format(key))
-                    print("Inputs: ", *(link[inp] for inp in val['in']))
-                    print(traceback.format_exc())
-                    break
-
-                # Rate limit
-                time.sleep(0.1)
-
+                        # Successful try, no need to retry
+                        break
             else:
-                pass
+                print("Function name {} is not available in {}.py".format(key, config['bot_logic_file_name']))
+                exit()
 
             # On final chain, calculate metrics
             if key == list(chain_instruct.keys())[-1]:
                 # Log time
                 end = time.time()
-                df_result['time'][i] = end - start
+                df_result['time'][i] = np.round(end - start, 4)
 
                 df_result['generated'][i] = link[val['out'][0]]
 
                 # Choose scoring method and utilize
                 for method in scoring_methods:
                     if method == 'cosine_similarity':
-                        try:
-                            cosine_similarity_score, cosine_similarities = get_cosine_similarity(a_true, link[val['out'][0]])
-                            time.sleep(0.1)
-                        except Exception:
-                            print("Error at cosine similarity")
-                            print(traceback.format_exc())
-                            cosine_similarity_score = np.nan
-                        
-                        df_result[method][i] = cosine_similarity_score
+                        for attempt in range(RETRIES):
+                            try:
+                                cosine_similarity_score, cosine_similarities = get_cosine_similarity(a_true, link[val['out'][0]])
+                                time.sleep(0.1)
+                                df_result[method][i] = np.round(cosine_similarity_score, 4)
+                            except Exception:
+                                print("Error at cosine similarity")
+                                print(traceback.format_exc())
+                                df_result['metric_error'][i] = traceback.format_exc()
+
+                                if attempt == RETRIES - 1:
+                                    grace_stop = True
+                            else:
+                                # Successful try, no need to retry
+                                break
+
                     elif method == 'ai_similarity':
                         # TODO: Implement AI similarity
                         pass
                     else:
-                        pass                
+                        print("No valid metric specified in config.yaml")
+                        exit()
 
                 # Log each output of each chain function
                 for key, val in config['chain_instruct'].items():
@@ -178,11 +198,28 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                             pass
                         else:
                             df_result[outp][i] = link[outp]
+
+            # Grace stop if too many retries - this is inner loop
+            if grace_stop == True:
+                break
+
             # End of chain instruct loop
+        
+        # Grace stop if too many retries - this is outer loop
+        if grace_stop == True:
+            print("Stopping experiment early due to error after {} attempts...".format(RETRIES))
+            break
+
         # End row loop
 
     for method in scoring_methods:	
-        mlflow.log_metrics({'avg_'+method: np.mean(df_result[method].dropna())})
+        mlflow.log_metrics({'avg_'+method: np.round(
+                np.mean(df_result[method].dropna()), 4
+            )
+        })
+
+    df_result['generated'] = df_result['generated'].replace(r'^\s*$', np.nan, regex=True)
+    mlflow.log_metrics({'num_complete_chain': len(df_result['generated'].dropna())})
     
     df_result.to_csv('results.csv', index=False)
     mlflow.log_artifact('results.csv')
