@@ -52,10 +52,20 @@ def get_cosine_similarity(A_true, A_pred):
     return cosine_similarity_score, cosine_similarities
 
 def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
-    '''
-    Input: True Answer, LLM answer, Question for which questions are asked. 
-    Output: LLM evaluation of semantic similarity: float [0,1]
-    '''
+    """
+    Evaluate the semantic similarity between the predicted and true answers using an llm model.
+
+    Args:
+        A_true (list): List of true answers.
+        A_pred (list): List of predicted answers from the language model.
+        Question (list): List of questions corresponding to each answer.
+
+    Returns:
+        Tuple: (ai_score, scores)
+            - ai_score (float): Average semantic similarity score across all questions.
+            - scores (list): List of individual semantic similarity scores for each question. 0=< value <=1.
+    """
+    
     val_template = """ 
     Question: {Question}
     PredictedAnswer: {PredictedAnswer}
@@ -98,10 +108,20 @@ def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
     return ai_score, scores
 
 def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
-    '''
-    Input: True Answer, LLM answer, Question for which questions are asked. 
-    Output: LLM evaluation of semantic similarity: Boolean Value: TRUE/FALSE
-    '''
+    """
+    Evaluate the semantic similarity between the predicted and true answers using an llm model.
+
+    Args:
+        A_true (list): List of true answers.
+        A_pred (list): List of predicted answers from the language model.
+        Question (list): List of questions corresponding to each answer.
+
+    Returns:
+        Tuple: (ai_score, scores)
+            - ai_score (float): Average semantic similarity score across all questions.
+            - scores (list): List of individual semantic similarity scores for each question. value: 0 or 1.
+    """
+
     val_template = """ 
     Question: {Question}
     PredictedAnswer: {PredictedAnswer}
