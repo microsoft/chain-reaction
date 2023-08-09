@@ -96,9 +96,7 @@ def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
             stop=None,
             temperature=1,
         )
-            print(response)
             ans = response['choices'][0]['text']
-            print(ans)
             scores.append(float(ans))
         ai_score = sum(scores)/len(scores)
     except ValueError as e:
@@ -147,11 +145,8 @@ def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
             stop=None,
             temperature=1,
         )
-            print(response)
             ans = response['choices'][0]['text']
-            print(ans)
             scores.append(float(eval(ans.strip())))
-            print(float(eval(ans.strip())))
         ai_score = sum(scores)/len(scores)
     except ValueError as e:
         print(f"Error: {e} ")
@@ -164,4 +159,5 @@ if __name__ == "__main__":
     Question = ["What to say first when meeting a group of people?", "How do you introduce yourself?"]
 
     print('Cosine similarity:', get_cosine_similarity(A_true, A_pred))
+    print('AI similarity:', AI_similarity_v0_text_davinci(A_true, A_pred, Question))
     print('AI similarity:', AI_similarity_v1_text_davinci(A_true, A_pred, Question))
