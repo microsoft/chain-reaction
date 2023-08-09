@@ -51,180 +51,92 @@ def get_cosine_similarity(A_true, A_pred):
     
     return cosine_similarity_score, cosine_similarities
 
-def get_llm_based_similarity_v1(A_true, A_pred, Question):
+def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
     '''
     Input: True Answer, LLM answer, Question for which questions are asked. 
-    Output: LLM evaluation of semantic similarity
+    Output: LLM evaluation of semantic similarity: float [0,1]
     '''
     val_template = """ 
     Question: {Question}
     PredictedAnswer: {PredictedAnswer}
     TrueAnswer: {TrueAnswer}
-    Analyze similarity between the PredictedAnswer and TrueAnswer for a given Question.
-    Your output is 0 if the PredictedAnswer is completely different from the correct TrueAnswer. 
-    Your output is 1 if the PredictedAnswer is semantically same as the correct TrueAnswer . 
-    Otherwise, your output is between 0 and 1 depending on the similarity of the answer and the correct answer.
-    Double check your output format before submitting it as output should not include anything other than a floating number from 0 to 1.
-    """
+    Calculate and provide the similarity score between the predicted answer (PredictedAnswer) and the true answer (TrueAnswer) for a given question (Question).
 
-    scores = []
-    for i in range(len(Question)):
-        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-        response = openai.Completion.create(
-        engine= completions_deployment,
-        prompt=val_prompt,
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=1,
-    )
-        print(response)
-        ans = response['choices'][0]['text']
-        print(ans)
-        scores.append(float(ans))
-    ai_score = sum(scores)/len(scores)
-    return ai_score, scores
+    In cases where PredictedAnswer bears no similarity to TrueAnswer, the output should be 0.
+    When PredictedAnswer and TrueAnswer are semantically identical, the output should be 1.
+    For all other scenarios, the output should be a floating-point number between 0 and 1, reflecting the extent of similarity between the two answers.
+    Ensure that your output is formatted correctly: it should be a floating-point number between 0 and 1, without any additional text such as 'answer=' or 'output ='. For instance, '1' and '0.7' are correct formats, while 'answer= 1' and 'output =0.7' are not.
 
-def get_llm_based_similarity_v2(A_true, A_pred, Question):
-    '''
-    Input: True Answer, LLM answer, Question for which questions are asked. 
-    Output: LLM evaluation of semantic similarity
-    '''
-    val_template = """ 
-    Question: {Question}
-    PredictedAnswer: {PredictedAnswer}
-    TrueAnswer: {TrueAnswer}
-    Analyze similarity between the PredictedAnswer and TrueAnswer for a given Question.
-    Your output is 0 if the answer is completely different from the correct answer. 
-    Your output is 1 if the answer is semantically same as the correct answer. 
-    Otherwise, your output is between 0 and 1 depending on the similarity of the answer and the correct answer.
-    Format the output as a number between 0 and 1, including 0 and 1.
-    Double check your output format before submitting it as output should not include anything other than a floating number from 0 to 1.
-    """
-    from langchain.llms import AzureOpenAI
-    from langchain import PromptTemplate, LLMChain
-    from langchain.schema import HumanMessage
+    Return the similarity score as the sole output."""
 
-    messages = [
-        HumanMessage(content=text),
-    ]
-    print("From LLM: ")
-    agent.run(messages)
-
-    prompt_template = PromptTemplate(
-        input_variables=["Question", "PredictedAnswer", "TrueAnswer"],
-        template=val_template,
-    )
-    azure_llm = AzureOpenAI(
-    deployment_name=completions_deployment,
-    openai_api_key=openai.api_key,
-    openai_api_base=openai.api_base,
-    openai_api_version=openai.api_version,
-    )
-
-#     openai.api_type = config["OPENAI_API_TYPE"] #"azure"
-# openai.api_key = config['OPENAI_API_KEY']
-# openai.api_base = config['OPENAI_API_ENDPOINT'] 
-# openai.api_version = config['OPENAI_API_VERSION'] 
-
-    llm_chain = LLMChain(llm=azure_llm, prompt=prompt_template)
-    scores = []
-    for i in range(len(Question)):
-        ans = llm_chain.predict(
-            Question = Question[i],
-            PredictedAnswer = A_pred[i],
-            TrueAnswer = A_true[i],
+    ai_score = "NA"
+    scores = len(Question)*["NA"]
+        
+    try:
+        if completions_deployment != "text-davinci-003":
+            raise ValueError("Deployment must be tex-davinci-003")
+        scores = []
+        for i in range(len(Question)):
+            val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
+            response = openai.Completion.create(
+            engine= completions_deployment,
+            prompt=val_prompt,
+            max_tokens=1024,
+            n=1,
+            stop=None,
+            temperature=1,
         )
-        print(ans)
-        scores.append(float(ans))
-    ai_score = sum(scores)/len(scores)
+            print(response)
+            ans = response['choices'][0]['text']
+            print(ans)
+            scores.append(float(ans))
+        ai_score = sum(scores)/len(scores)
+    except ValueError as e:
+        print(f"Error: {e} ")
+
+
     return ai_score, scores
 
-def get_llm_based_similarity_v3(A_true, A_pred, Question):
+def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
     '''
     Input: True Answer, LLM answer, Question for which questions are asked. 
-    Output: LLM evaluation of semantic similarity
+    Output: LLM evaluation of semantic similarity: Boolean Value: TRUE/FALSE
     '''
     val_template = """ 
     Question: {Question}
     PredictedAnswer: {PredictedAnswer}
     TrueAnswer: {TrueAnswer}
-    Analyze similarity between the PredictedAnswer and TrueAnswer for a given Question.
-    Your output is 0 if the answer is completely different from the correct answer. 
-    Your output is 1 if the answer is semantically same as the correct answer. 
-    Otherwise, your output is between 0 and 1 depending on the similarity of the answer and the correct answer.
-    Format the output as a number between 0 and 1, including 0 and 1.
-    Double check your output format before submitting it as output should not include anything other than a floating number from 0 to 1.
+    Evaluate the accuracy of the question answering model's predictions.
+    Given a question, the true answer (TrueAnswer), and the model's prediction(PredictedAnswer), determine if the model's prediction matches the true answer.
+    Return a Boolean value indicating whether the model's prediction is correct (True/False).
     """
-    from langchain.llms import AzureOpenAI
-    from langchain import PromptTemplate, LLMChain
-    from langchain.schema import HumanMessage
+    ai_score = "NA"
+    scores = len(Question)*["NA"]
 
-
-    # prompt_template = PromptTemplate(
-    #     input_variables=["Question", "PredictedAnswer", "TrueAnswer"],
-    #     template=val_template,
-    # )
-    azure_llm = AzureOpenAI(
-    deployment_name=completions_deployment,
-    openai_api_key=openai.api_key,
-    openai_api_base=openai.api_base,
-    openai_api_version=openai.api_version,
-    )
-
-#     openai.api_type = config["OPENAI_API_TYPE"] #"azure"
-# openai.api_key = config['OPENAI_API_KEY']
-# openai.api_base = config['OPENAI_API_ENDPOINT'] 
-# openai.api_version = config['OPENAI_API_VERSION'] 
-
-    llm_chain = LLMChain(llm=azure_llm)
-    scores = []
-    for i in range(len(Question)):
-        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-        messages = [
-            HumanMessage(content=val_prompt),
-                ]
-        ans = llm_chain.predict(messages
+    try:
+        if completions_deployment != "text-davinci-003":
+            raise ValueError("Deployment must be tex-davinci-003")
+        scores = []
+        for i in range(len(Question)):
+            val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
+            response = openai.Completion.create(
+            engine= completions_deployment,
+            prompt=val_prompt,
+            max_tokens=1024,
+            n=1,
+            stop=None,
+            temperature=1,
         )
-        print(ans)
-        scores.append(float(ans))
-    ai_score = sum(scores)/len(scores)
+            print(response)
+            ans = response['choices'][0]['text']
+            print(ans)
+            scores.append(float(eval(ans.strip())))
+            print(float(eval(ans.strip())))
+        ai_score = sum(scores)/len(scores)
+    except ValueError as e:
+        print(f"Error: {e} ")
+    
     return ai_score, scores
-
-## This function is used to extract the list of questions and answers from the csv files
-def returnQA(benchmark_csv_file_path, solution_csv_file_path):
-    ## Extract list of questions and answers given csv files
-    
-    Questions = []
-    A_true = []
-    A_pred = []
-    
-    with open(benchmark_csv_file_path, "r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            Questions.append(row["Question"])
-            A_true.append(row["Answer"])
-    
-    with open(solution_csv_file_path, "r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            A_pred.append(row["Answer"])
-            
-    return Questions, A_true, A_pred
-
-def returnQA_(csv):
-    Questions = []
-    A_true = []
-    A_pred = []
-
-    with open(csv, 'r') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            Questions.append(row["question"])
-            A_true.append(row["Answer"])
-            A_pred.append(row["predicted"])
-    return Questions, A_true, A_pred
-
 
 if __name__ == "__main__":
     A_true = ["Hi all", "my name is"]
@@ -232,4 +144,4 @@ if __name__ == "__main__":
     Question = ["What to say first when meeting a group of people?", "How do you introduce yourself?"]
 
     print('Cosine similarity:', get_cosine_similarity(A_true, A_pred))
-    print('AI similarity:', get_llm_based_similarity_v3(A_true, A_pred, Question))
+    print('AI similarity:', AI_similarity_v1_text_davinci(A_true, A_pred, Question))
