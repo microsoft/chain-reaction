@@ -15,7 +15,7 @@ __copyright__ = "Copyright 2023, Microsoft Corp."
 import numpy as np
 import pandas as pd
 import yaml
-from evals import get_cosine_similarity, AI_similarity_v0_text_davinci
+from evals import get_cosine_similarity, AI_similarity
 import importlib
 import json
 import time
@@ -169,7 +169,7 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                     if method == 'cosine_similarity':
                         for attempt in range(RETRIES):
                             try:
-                                cosine_similarity_score, cosine_similarities = get_cosine_similarity(a_true, link[val['out'][0]])
+                                cosine_similarity_score = get_cosine_similarity(a_true, link[val['out'][0]])
                                 time.sleep(0.1)
                                 df_result[method][i] = np.round(cosine_similarity_score, 4)
                             except Exception:
@@ -186,9 +186,9 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                     if method == 'ai_similarity':
                         for attempt in range(RETRIES):
                             try:
-                                ai_similarity, scores = AI_similarity_v0_text_davinci(a_true, link[val['out'][0]], [link[input_var]])
+                                ai_similarity_score = AI_similarity(a_true, link[val['out'][0]], link[input_var])
                                 time.sleep(0.1)
-                                df_result[method][i] = np.round(ai_similarity, 4)
+                                df_result[method][i] = ai_similarity_score
                             except Exception:
                                 print("Error at AI similarity")
                                 print(traceback.format_exc())
@@ -199,9 +199,6 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                             else:
                                 # Successful try, no need to retry
                                 break
-                    else:
-                        print("No valid metric specified in config.yaml")
-                        exit()
 
                 # Log each output of each chain function
                 for key, val in config['chain_instruct'].items():

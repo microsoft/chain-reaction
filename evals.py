@@ -8,7 +8,7 @@ import csv
 import yaml
 import pdb
 
-# Get filename of .env
+# Get vars from config file
 with open('config.yaml', 'r') as f:
     tool_config = yaml.safe_load(f)
 
@@ -17,10 +17,9 @@ env_name = tool_config['env_file_name'] # change to use your own .env file
 config = dotenv_values('bot/'+env_name+'.env')
 
 ## Configure openai
-
-openai.api_type = config["OPENAI_API_TYPE"] #"azure"
+openai.api_type = config["OPENAI_API_TYPE"]
 openai.api_key = config['OPENAI_API_KEY']
-openai.api_base = config['OPENAI_API_BASE'] #"https://synapseml-openai.openai.azure.com/"
+openai.api_base = config['OPENAI_API_BASE']
 openai.api_version = config['OPENAI_API_VERSION'] 
 
 def createEmbeddings(text):
@@ -29,121 +28,64 @@ def createEmbeddings(text):
     return embeddings
 
 def get_cosine_similarity(A_true, A_pred):
-    # A_true: list of true answers
-    # A_predicted: list of predicted answers
+    # A_true: str of true answers
+    # A_predicted: str of predicted answers
     
-    # cosine_similarity_score: average score over all the questions
-    # cosine_similarities: list of cosine similarities
+    # cosine_similarity_score: score of cosine similarity between A_true and A_pred
     
-    cosine_similarities = []
-    for i in range(len(A_true)):
-        emb_true = createEmbeddings(A_true[i])
-        time.sleep(0.1)
-        emb_pred = createEmbeddings(A_pred[i])
-        cosine_similarity_val = cosine_similarity(
-            np.array(emb_true).reshape(1, -1), np.array(emb_pred).reshape(1, -1)
-        )[0][0]
-        cosine_similarities.append(np.round(cosine_similarity_val, 4))
+    emb_true = createEmbeddings(A_true)
+    emb_pred = createEmbeddings(A_pred)
+    cosine_similarity_val = cosine_similarity(
+        np.array(emb_true).reshape(1, -1), np.array(emb_pred).reshape(1, -1)
+    )[0][0]
+    cosine_similarity_score = np.round(cosine_similarity_val, 4)
         
-    cosine_similarity_score = sum(cosine_similarities) / len(cosine_similarities)
-    
-    return cosine_similarity_score, cosine_similarities
+    return cosine_similarity_score
 
-def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
+def AI_similarity(A_true, A_pred, Question):
     """
     Evaluate the semantic similarity between the predicted and true answers using an llm model.
 
     Args:
-        A_true (list): List of true answers.
-        A_pred (list): List of predicted answers from the language model.
-        Question (list): List of questions corresponding to each answer.
+        A_true: str of true answers.
+        A_pred: str of predicted answers from the language model.
+        Question: str of questions corresponding to each answer.
 
     Returns:
-        Tuple: (ai_score, scores)
-            - ai_score (float): Average semantic similarity score across all questions.
-            - scores (list): List of individual semantic similarity scores for each question. 0=< value <=1.
+        ai_score (int): Semantic similarity score between the predicted and true answers.
     """
     
-    val_template = """ 
-    Question: {Question}
-    PredictedAnswer: {PredictedAnswer}
-    TrueAnswer: {TrueAnswer}
-    Calculate and provide the similarity score between the predicted answer (PredictedAnswer) and the true answer (TrueAnswer) for a given question (Question).
-
-    In cases where PredictedAnswer bears no similarity to TrueAnswer, the output should be 0.
-    When PredictedAnswer and TrueAnswer are semantically identical, the output should be 1.
-    For all other scenarios, the output should be a floating-point number between 0 and 1, reflecting the extent of similarity between the two answers.
-    Ensure that your output is formatted correctly: it should be a floating-point number between 0 and 1, without any additional text such as 'answer=' or 'output ='. For instance, '1' and '0.7' are correct formats, while 'answer= 1' and 'output =0.7' are not.
-
-    Return the similarity score as the sole output."""
-
-    ai_score = "NA"
-    scores = len(Question)*["NA"]
-        
-    scores = []
-    for i in range(len(Question)):
-        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-        response = openai.Completion.create(
-            engine=config["OPENAI_DEPLOYMENT_COMPLETION"],
-            prompt=val_prompt,
-            max_tokens=1024,
-            n=1,
-            stop=None,
-            temperature=0,
-        )
-        ans = response['choices'][0]['text']
-        scores.append(float(ans))
-    ai_score = sum(scores)/len(scores)
-    return ai_score, scores
-
-def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
-    """
-    Evaluate the semantic similarity between the predicted and true answers using an llm model.
-
-    Args:
-        A_true (list): List of true answers.
-        A_pred (list): List of predicted answers from the language model.
-        Question (list): List of questions corresponding to each answer.
-
-    Returns:
-        Tuple: (ai_score, scores)
-            - ai_score (float): Average semantic similarity score across all questions.
-            - scores (list): List of individual semantic similarity scores for each question. value: 0 or 1.
-    """
-
     val_template = """ 
     Question: {Question}
     PredictedAnswer: {PredictedAnswer}
     TrueAnswer: {TrueAnswer}
     Evaluate the accuracy of the question answering model's predictions.
-    Given a question, the true answer (TrueAnswer), and the model's prediction(PredictedAnswer), determine if the model's prediction matches the true answer.
-    Return a Boolean value indicating whether the model's prediction is correct (True/False).
-    """
-    ai_score = "NA"
-    scores = len(Question)*["NA"]
+    Given a question, the true answer (TrueAnswer), and the model's prediction (PredictedAnswer), determine if the model's prediction matches the true answer.
+    Return only a single score of 0 or 1 indicating whether the model's prediction is correct. The response should be an integer with no newline characters."""
 
-    scores = []
-    for i in range(len(Question)):
-        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-        response = openai.Completion.create(
-            engine=config["OPENAI_DEPLOYMENT_COMPLETION"],
-            prompt=val_prompt,
-            max_tokens=1024,
-            n=1,
-            stop=None,
-            temperature=0,
-        )
-        ans = response['choices'][0]['text']
-        scores.append(float(eval(ans.strip())))
-    ai_score = sum(scores)/len(scores)
-    
-    return ai_score, scores
+    ai_score = "NA"
+        
+    val_prompt = val_template.format(
+        Question=Question, 
+        PredictedAnswer=A_pred,
+        TrueAnswer = A_true
+    )
+    response = openai.Completion.create(
+        engine=config["OPENAI_DEPLOYMENT_COMPLETION"],
+        prompt=val_prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0,
+    )
+    ans = response['choices'][0]['text']
+    ai_score = int(ans)
+    return ai_score
 
 if __name__ == "__main__":
-    A_true = ["Hi all", "my name is"]
-    A_pred = ["Hello all", "my name is not"]
-    Question = ["What to say first when meeting a group of people?", "How do you introduce yourself?"]
+    Question = "How do you introduce yourself?"
+    A_true = "My name is"
+    A_pred = "My name is not"
 
     print('Cosine similarity:', get_cosine_similarity(A_true, A_pred))
-    print('AI similarity:', AI_similarity_v0_text_davinci(A_true, A_pred, Question))
-    print('AI similarity:', AI_similarity_v1_text_davinci(A_true, A_pred, Question))
+    print('AI similarity:', AI_similarity(A_true, A_pred, Question))
