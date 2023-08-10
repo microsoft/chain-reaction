@@ -5,7 +5,7 @@ mlflow_experiment_name: Default
 mlflow_run_name: run 1
 scoring:
   cosine_similarity: true
-  ai_similarity: false # TODO:
+  ai_similarity: true
 constants:
   retrieve_k: 3
 function_logging_vars:
