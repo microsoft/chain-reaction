@@ -6,6 +6,7 @@ import openai
 import time
 import csv
 import yaml
+import pdb
 
 # Get filename of .env
 with open('config.yaml', 'r') as f:
@@ -19,14 +20,11 @@ config = dotenv_values('bot/'+env_name+'.env')
 
 openai.api_type = config["OPENAI_API_TYPE"] #"azure"
 openai.api_key = config['OPENAI_API_KEY']
-openai.api_base = config['OPENAI_API_ENDPOINT'] 
+openai.api_base = config['OPENAI_API_BASE'] 
 openai.api_version = config['OPENAI_API_VERSION'] 
-embeddings_deployment = config['OPENAI_EMBEDDINGS_DEPLOYMENT']
-completions_deployment = config['OPENAI_COMPLETIONS_DEPLOYMENT']
-
 
 def createEmbeddings(text):
-    response = openai.Embedding.create(input=text , engine=embeddings_deployment)
+    response = openai.Embedding.create(input=text, engine=config['OPENAI_DEPLOYMENT_EMBEDDING'])
     embeddings = response['data'][0]['embedding']
     return embeddings
 
@@ -82,27 +80,20 @@ def AI_similarity_v0_text_davinci(A_true, A_pred, Question):
     ai_score = "NA"
     scores = len(Question)*["NA"]
         
-    try:
-        if completions_deployment != "text-davinci-003":
-            raise ValueError("Deployment must be tex-davinci-003")
-        scores = []
-        for i in range(len(Question)):
-            val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-            response = openai.Completion.create(
-            engine= completions_deployment,
+    scores = []
+    for i in range(len(Question)):
+        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
+        response = openai.Completion.create(
+            engine=config["OPENAI_DEPLOYMENT_COMPLETION"],
             prompt=val_prompt,
             max_tokens=1024,
             n=1,
             stop=None,
-            temperature=1,
+            temperature=0,
         )
-            ans = response['choices'][0]['text']
-            scores.append(float(ans))
-        ai_score = sum(scores)/len(scores)
-    except ValueError as e:
-        print(f"Error: {e} ")
-
-
+        ans = response['choices'][0]['text']
+        scores.append(float(ans))
+    ai_score = sum(scores)/len(scores)
     return ai_score, scores
 
 def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
@@ -131,25 +122,20 @@ def AI_similarity_v1_text_davinci(A_true, A_pred, Question):
     ai_score = "NA"
     scores = len(Question)*["NA"]
 
-    try:
-        if completions_deployment != "text-davinci-003":
-            raise ValueError("Deployment must be tex-davinci-003")
-        scores = []
-        for i in range(len(Question)):
-            val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
-            response = openai.Completion.create(
-            engine= completions_deployment,
+    scores = []
+    for i in range(len(Question)):
+        val_prompt = val_template.format(Question = Question[i], PredictedAnswer = A_pred[i], TrueAnswer = A_true[i])
+        response = openai.Completion.create(
+            engine=config["OPENAI_DEPLOYMENT_COMPLETION"],
             prompt=val_prompt,
             max_tokens=1024,
             n=1,
             stop=None,
-            temperature=1,
+            temperature=0,
         )
-            ans = response['choices'][0]['text']
-            scores.append(float(eval(ans.strip())))
-        ai_score = sum(scores)/len(scores)
-    except ValueError as e:
-        print(f"Error: {e} ")
+        ans = response['choices'][0]['text']
+        scores.append(float(eval(ans.strip())))
+    ai_score = sum(scores)/len(scores)
     
     return ai_score, scores
 

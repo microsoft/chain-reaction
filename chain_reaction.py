@@ -15,7 +15,7 @@ __copyright__ = "Copyright 2023, Microsoft Corp."
 import numpy as np
 import pandas as pd
 import yaml
-from evals import get_cosine_similarity
+from evals import get_cosine_similarity, AI_similarity_v0_text_davinci
 import importlib
 import json
 import time
@@ -183,9 +183,22 @@ with mlflow.start_run(run_name=mlflow_run_name) as run:
                                 # Successful try, no need to retry
                                 break
 
-                    elif method == 'ai_similarity':
-                        # TODO: Implement AI similarity
-                        pass
+                    if method == 'ai_similarity':
+                        for attempt in range(RETRIES):
+                            try:
+                                ai_similarity, scores = AI_similarity_v0_text_davinci(a_true, link[val['out'][0]], [link[input_var]])
+                                time.sleep(0.1)
+                                df_result[method][i] = np.round(ai_similarity, 4)
+                            except Exception:
+                                print("Error at AI similarity")
+                                print(traceback.format_exc())
+                                df_result['metric_error'][i] = traceback.format_exc()
+
+                                if attempt == RETRIES - 1:
+                                    grace_stop = True
+                            else:
+                                # Successful try, no need to retry
+                                break
                     else:
                         print("No valid metric specified in config.yaml")
                         exit()

@@ -4,8 +4,8 @@ env_file_name: llm_pgvector
 mlflow_experiment_name: Default
 mlflow_run_name: run 1
 scoring:
-  cosine_similarity: true
-  ai_similarity: false # TODO:
+  cosine_similarity: false
+  ai_similarity: true
 constants:
   retrieve_k: 3
 function_logging_vars:
@@ -13,6 +13,8 @@ function_logging_vars:
   - question_prompt_template
 chain_instruct:
   createEmbeddings:
+    prompt_id: 8
+    temperature: 0
     in:
       - msg
     out:
