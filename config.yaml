@@ -1,16 +1,18 @@
-bot_logic_file_name: bot_logic
+llm_app_file_name: bot_logic
 benchmark_csv: benchmark_QA
 env_file_name: llm_pgvector
 mlflow_experiment_name: Default
 mlflow_run_name: run 1
-scoring:
+evaluation_metrics:
   cosine_similarity: true
-  ai_similarity: true
-constants:
+  ai_similarity: false
+experiment_vars:
   retrieve_k: 3
-function_logging_vars:
+  prompt_templates_name: prompt_templates
+  prompt_id: 1
+internal_logged_vars:
   - engine
-  - question_prompt_template
+  - prompt_template
 chain_instruct:
   createEmbeddings:
     in:
@@ -28,9 +30,16 @@ chain_instruct:
       - top_rows
     out:
       - context
+  get_prompt:
+    in:
+      - prompt_templates_name
+      - prompt_id
+    out:
+      - prompt_template
   llm_call:
     in:
       - context
       - msg
+      - prompt_template
     out:
       - ans

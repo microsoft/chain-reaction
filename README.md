@@ -8,6 +8,7 @@ Some assumptions are made:
 - chains are sequenced with Python functions and not inner calls of langchain/semantic_kernel
 - input/output of each function must be string or tuple (no dictionary)
 - desired variables to be logged within the scope of a function must be defined as a variable in `locals()` since we are retrieving from the stack
+- desired variables to be logged within the scope of a function must not be lists or dictionaries.
 
 ![](img/chain_reaction_design.png)
 
@@ -23,6 +24,7 @@ chain-reaction
     │---example.env         
     │---bot_logic.py                
     │---benchmark_QA.csv         
+    │---prompt_templates.csv         
 ```
 
 *** Note: For specific logic to allow experimenting, add `bot_logic.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
@@ -31,7 +33,7 @@ chain-reaction
 ```bash
 conda env update -f environment.yaml
 ```
-2. Place relevant bot files like `.env` and `.py` into the folder named `/bot`
+2. Place relevant bot files like `.env`, `.py` into the folder named `/bot`
 3. Update the `.env` file to include OpenAI embedding models
 4. Install requirements for your bot
 5. Update the `config.yaml` with your `bot_logic_file_name` from the `/bot` folder
@@ -45,23 +47,25 @@ conda env update -f environment.yaml
 7. Update the `config.yaml` with your `benchmark_csv` from the `/bot` folder
 8. Update the `config.yaml` with the in/out variable names in your chain sequence
 9. Update the `config.yaml` with any constants you want to set as args for functions
-10. Update the `config.yaml` with variable names you want to log from function scopes under `function_logging_vars`
+10. Update the `config.yaml` with variable names you want to log from function scopes under `internal_logged_vars`
 
 Example config file below:
-```yml
-bot_logic_file_name: bot_logic
+```yaml
+llm_app_file_name: bot_logic
 benchmark_csv: benchmark_QA
 env_file_name: llm_pgvector
 mlflow_experiment_name: Default
 mlflow_run_name: run 1
-scoring:
+evaluation_metrics:
   cosine_similarity: true
-  ai_similarity: false # TODO:
-constants:
+  ai_similarity: false
+experiment_vars:
   retrieve_k: 3
-function_logging_vars:
+  prompt_templates_name: prompt_templates
+  prompt_id: 1
+internal_logged_vars:
   - engine
-  - question_prompt_template
+  - prompt_template
 chain_instruct:
   createEmbeddings:
     in:
@@ -79,17 +83,24 @@ chain_instruct:
       - top_rows
     out:
       - context
+  get_prompt:
+    in:
+      - prompt_templates_name
+      - prompt_id
+    out:
+      - prompt_template
   llm_call:
     in:
       - context
       - msg
+      - prompt_template
     out:
       - ans
 ```
 
 ## Usage
 
-After updating your `config.yaml`, run the following command to loop through the benchmark Q&A csv and report out the results `MLFlow`
+After updating your `config.yaml`, run the following command to loop through the benchmark Q&A csv and report out the results `MLFlow`. You can also specify a different config file by using the optional flag `--config=<insert_name>.yaml`.
 
 ```bash
 python chain_reaction.py
