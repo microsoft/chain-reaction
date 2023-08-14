@@ -31,24 +31,24 @@ warnings.simplefilter('ignore')
 RETRIES = 2
 
 def call_function_get_frame(func, *args, **kwargs):
-      """
-      Calls the function *func* with the specified arguments and keyword
-      arguments and snatches its local frame before it actually executes.
-      """
-      frame = None
-      trace = sys.gettrace()
-      def snatch_locals(_frame, name, arg):
+    """
+    Calls the function *func* with the specified arguments and keyword
+    arguments and snatches its local frame before it actually executes.
+    """
+    frame = None
+    trace = sys.gettrace()
+    def snatch_locals(_frame, name, arg):
         nonlocal frame
         if frame is None and name == 'call':
-          frame = _frame
-          sys.settrace(trace)
+            frame = _frame
+            sys.settrace(trace)
         return trace
-      sys.settrace(snatch_locals)
-      try:
+    sys.settrace(snatch_locals)
+    try:
         result = func(*args, **kwargs)
-      finally:
+    finally:
         sys.settrace(trace)
-      return frame, result
+    return frame, result
 
 def namespace_decorator(func):
     """
@@ -103,7 +103,7 @@ def main(config_file):
         for outp in instruction['out']:
             df_result[outp] = np.nan
 
-    with mlflow.start_run(run_name=mlflow_run_name) as run:
+    with mlflow.start_run() as run:
         if config['experiment_vars'] != None:
             mlflow.log_params(config['experiment_vars'])
 

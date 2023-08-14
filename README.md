@@ -24,7 +24,6 @@ chain-reaction
     │---example.env         
     │---llm_app.py                
     │---benchmark_QA.csv         
-    │---prompt_templates.csv         
 ```
 
 *** Note: For specific logic to allow experimenting, add `llm_app.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
@@ -93,6 +92,21 @@ chain_instruct:
     out:
       - ans
 ```
+
+> NOTE: One can instead write a single function for your LLM app and can simply define your experiment variables in code, however, make sure sure to add the variables of interest to log in the `internal_logged_vars`. This simplifies the config file, however, currently logging variables in nested functions are not currently supported.
+
+```yaml
+...
+internal_logged_vars:
+  - prompt_template_1
+  - prompt_template_2
+chain_instruct:
+  - fxn_name: test_two_prompt
+    in:
+      - msg
+    out:
+      - ans
+``````
 
 ## Usage
 

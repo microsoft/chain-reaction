@@ -2,7 +2,6 @@ llm_app_file_name: bot_logic
 benchmark_csv: benchmark_QA
 env_file_name: llm_pgvector
 mlflow_experiment_name: Default
-mlflow_run_name: run 1
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
