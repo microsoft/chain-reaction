@@ -45,9 +45,10 @@ conda env update -f environment.yaml
 | What is the composition of the universe? | The universe is primarily made up of dark energy, dark matter, and ordinary matter, with ordinary matter being the most familiar to us. |
 
 7. Update the `config.yaml` with your `benchmark_csv` from the `/bot` folder
-8. Update the `config.yaml` with the in/out variable names in your chain sequence, be sure to define the `input_var` for your LLM message variable name in case your initial function in the chain sequence takes different inputs
-9. Update the `config.yaml` with any `experiment_vars` you want to set as args for functions
-10. Update the `config.yaml` with variable names you want to log from function scopes under `internal_logged_vars`
+8. Define the `input_var` in `config.yaml` for your LLM message variable name in case your initial function in the chain sequence takes different inputs
+9. Update the `config.yaml` with the in/out variable names in your chain sequence
+10. Update the `config.yaml` with any `experiment_vars` you want to set as args for functions
+11. Update the `config.yaml` with variable names you want to log from function scopes under `internal_logged_vars`
 
 Example config file below:
 ```yaml
@@ -62,7 +63,7 @@ evaluation_metrics:
 input_var: msg
 experiment_vars:
   prompt_templates_name: prompt_templates
-  prompt_id_a: 2
+  prompt_id_a: 1
   prompt_id_b: 2
 internal_logged_vars:
   - engine
