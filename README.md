@@ -22,12 +22,12 @@ chain-reaction
 │---evals.py                     
 ├───bot                          
     │---example.env         
-    │---bot_logic.py                
+    │---llm_app.py                
     │---benchmark_QA.csv         
     │---prompt_templates.csv         
 ```
 
-*** Note: For specific logic to allow experimenting, add `bot_logic.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
+*** Note: For specific logic to allow experimenting, add `llm_app.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
 
 1. Install miniconda and create a virtual environment
 ```bash
@@ -36,7 +36,7 @@ conda env update -f environment.yaml
 2. Place relevant bot files like `.env`, `.py` into the folder named `/bot`
 3. Update the `.env` file to include OpenAI embedding models
 4. Install requirements for your bot
-5. Update the `config.yaml` with your `bot_logic_file_name` from the `/bot` folder
+5. Update the `config.yaml` with your `llm_app_file_name` from the `/bot` folder
 6. Place `.csv` of benchmark Q&A in the folder named `/bot`
 
 | Question      | Answer |
@@ -45,13 +45,13 @@ conda env update -f environment.yaml
 | What is the composition of the universe? | The universe is primarily made up of dark energy, dark matter, and ordinary matter, with ordinary matter being the most familiar to us. |
 
 7. Update the `config.yaml` with your `benchmark_csv` from the `/bot` folder
-8. Update the `config.yaml` with the in/out variable names in your chain sequence
-9. Update the `config.yaml` with any constants you want to set as args for functions
+8. Update the `config.yaml` with the in/out variable names in your chain sequence, be sure to define the `input_var` for your LLM message variable name in case your initial function in the chain sequence takes different inputs
+9. Update the `config.yaml` with any `experiment_vars` you want to set as args for functions
 10. Update the `config.yaml` with variable names you want to log from function scopes under `internal_logged_vars`
 
 Example config file below:
 ```yaml
-llm_app_file_name: bot_logic
+llm_app_file_name: llm_app
 benchmark_csv: benchmark_QA
 env_file_name: llm_pgvector
 mlflow_experiment_name: Default
@@ -59,41 +59,36 @@ mlflow_run_name: run 1
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
+input_var: msg
 experiment_vars:
-  retrieve_k: 3
   prompt_templates_name: prompt_templates
-  prompt_id: 1
+  prompt_id_a: 2
+  prompt_id_b: 2
 internal_logged_vars:
   - engine
-  - prompt_template
 chain_instruct:
-  createEmbeddings:
-    in:
-      - msg
-    out:
-      - questionEmbedding
-  retrieve_k_chunk:
-    in:
-      - retrieve_k
-      - questionEmbedding
-    out:
-      - top_rows
-  get_context:
-    in:
-      - top_rows
-    out:
-      - context
-  get_prompt:
+  - fxn_name: get_prompt
     in:
       - prompt_templates_name
-      - prompt_id
+      - prompt_id_a
     out:
-      - prompt_template
-  llm_call:
+      - prompt_template_a
+  - fxn_name: llm_call
     in:
-      - context
       - msg
-      - prompt_template
+      - prompt_template_a
+    out:
+      - result
+  - fxn_name: get_prompt
+    in:
+      - prompt_templates_name
+      - prompt_id_b
+    out:
+      - prompt_template_b
+  - fxn_name: llm_call
+    in:
+      - msg
+      - prompt_template_b
     out:
       - ans
 ```

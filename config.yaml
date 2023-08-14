@@ -6,6 +6,7 @@ mlflow_run_name: run 1
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
+input_var: msg
 experiment_vars:
   retrieve_k: 3
   prompt_templates_name: prompt_templates
@@ -14,29 +15,29 @@ internal_logged_vars:
   - engine
   - prompt_template
 chain_instruct:
-  createEmbeddings:
+  - fxn_name: createEmbeddings
     in:
       - msg
     out:
       - questionEmbedding
-  retrieve_k_chunk:
+  - fxn_name: retrieve_k_chunk
     in:
       - retrieve_k
       - questionEmbedding
     out:
       - top_rows
-  get_context:
+  - fxn_name: get_context
     in:
       - top_rows
     out:
       - context
-  get_prompt:
+  - fxn_name: get_prompt
     in:
       - prompt_templates_name
       - prompt_id
     out:
       - prompt_template
-  llm_call:
+  - fxn_name: llm_call
     in:
       - context
       - msg

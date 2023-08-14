@@ -99,14 +99,16 @@ def main(config_file):
     for key in config['internal_logged_vars']:
         df_result[key] = np.nan
 
-    for key, val in config['chain_instruct'].items():
-        for outp in val['out']:
+    for instruction in chain_instruct:
+        for outp in instruction['out']:
             df_result[outp] = np.nan
 
     with mlflow.start_run(run_name=mlflow_run_name) as run:
         if config['experiment_vars'] != None:
             mlflow.log_params(config['experiment_vars'])
-        mlflow.log_param('sequence', list(config['chain_instruct'].keys()))
+
+        sequence = [instr['fxn_name'] for instr in chain_instruct] 
+        mlflow.log_param('sequence', sequence)
 
         grace_stop = False
         for i, row in df.iterrows():
@@ -114,19 +116,17 @@ def main(config_file):
             raw_msg = row['Question']
             a_true = row['Answer']
 
-            # Find the first input variable from the dictionary chain_instruct
-            input_var = list(chain_instruct.values())[0]['in'][0]
             # Initialize hash map for inputs/outputs of each chain function
-            link = {input_var: raw_msg}
+            link = {config['input_var']: raw_msg}
 
             if config['experiment_vars'] != None:
                 link.update(config['experiment_vars'])
 
-            for key, val in chain_instruct.items():
+            for chain_num, instruction in enumerate(chain_instruct):
                 start = time.time()
-                if key in chain_fxns.__dict__.keys():
+                if instruction['fxn_name'] in chain_fxns.__dict__.keys():
                     # Use wrapper to get local variables
-                    fxn = namespace_decorator(chain_fxns.__dict__[key])
+                    fxn = namespace_decorator(chain_fxns.__dict__[instruction['fxn_name']])
                     
                     # Run chain function with args from schema
                     for attempt in range(RETRIES):
@@ -135,7 +135,7 @@ def main(config_file):
 
                         try:
                             result_module, result = fxn(
-                                *(link[inp] for inp in val['in'])
+                                *(link[inp] for inp in instruction['in'])
                             )
 
                             # Check if config['internal_logged_vars'] keys are in result_module
@@ -149,10 +149,10 @@ def main(config_file):
                                         df_result[hyp_key][i] = result_module.__dict__[hyp_key]
                             
                             # Update link dictionary with outputs
-                            if len(result) > 1 and len(val['out']) > 1:
-                                [link.update({outp: result[i]}) for i, outp in enumerate(val['out'])]
+                            if len(result) > 1 and len(instruction['out']) > 1:
+                                [link.update({outp: result[i]}) for i, outp in enumerate(instruction['out'])]
                             else:
-                                [link.update({outp: result}) for outp in val['out']]
+                                [link.update({outp: result}) for outp in instruction['out']]
                         
                         except Exception:
                             print("Error at chain {}".format(key))
@@ -169,19 +169,19 @@ def main(config_file):
                     exit()
 
                 # On final chain, calculate metrics
-                if key == list(chain_instruct.keys())[-1]:
+                if chain_num == len(sequence)-1:
                     # Log time
                     end = time.time()
                     df_result['time'][i] = np.round(end - start, 4)
                     
-                    df_result['generated'][i] = link[val['out'][0]]
+                    df_result['generated'][i] = link[instruction['out'][0]]
 
                     # Choose scoring method and utilize
                     for method in scoring_methods:
                         if method == 'cosine_similarity':
                             for attempt in range(RETRIES):
                                 try:
-                                    cosine_similarity_score = get_cosine_similarity(a_true, link[val['out'][0]])
+                                    cosine_similarity_score = get_cosine_similarity(a_true, link[instruction['out'][0]])
                                     time.sleep(0.1)
                                     df_result[method][i] = np.round(cosine_similarity_score, 4)
                                 except Exception:
@@ -198,7 +198,7 @@ def main(config_file):
                         if method == 'ai_similarity':
                             for attempt in range(RETRIES):
                                 try:
-                                    ai_similarity_score = AI_similarity(a_true, link[val['out'][0]], link[input_var])
+                                    ai_similarity_score = AI_similarity(a_true, link[instruction['out'][0]], link[input_var])
                                     time.sleep(0.1)
                                     df_result[method][i] = ai_similarity_score
                                 except Exception:
@@ -213,8 +213,8 @@ def main(config_file):
                                     break
 
                     # Log each output of each chain function
-                    for key, val in config['chain_instruct'].items():
-                        for outp in val['out']:
+                    for instruction in chain_instruct:
+                        for outp in instruction['out']:
                             if type(link[outp]) == list or type(link[outp]) == dict:
                                 # Do not log things like embeddings
                                 pass
