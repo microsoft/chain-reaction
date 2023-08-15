@@ -1,45 +1,19 @@
-llm_app_file_name: bot_logic
+llm_app_file_name: llm_app
 benchmark_csv: benchmark_QA
-env_file_name: llm_pgvector
+env_file_name: llm_env
 mlflow_experiment_name: Default
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
-input_var: msg
+input_var: raw_msg
 experiment_vars:
-  retrieve_k: 3
-  prompt_templates_name: prompt_templates
-  prompt_id: 1
 internal_logged_vars:
-  - engine
-  - prompt_template
+  - retrieve_k
+  - context
+  - question_prompt_template
 chain_instruct:
-  - fxn_name: createEmbeddings
+  - fxn_name: qna_llm
     in:
-      - msg
-    out:
-      - questionEmbedding
-  - fxn_name: retrieve_k_chunk
-    in:
-      - retrieve_k
-      - questionEmbedding
-    out:
-      - top_rows
-  - fxn_name: get_context
-    in:
-      - top_rows
-    out:
-      - context
-  - fxn_name: get_prompt
-    in:
-      - prompt_templates_name
-      - prompt_id
-    out:
-      - prompt_template
-  - fxn_name: llm_call
-    in:
-      - context
-      - msg
-      - prompt_template
+      - raw_msg
     out:
       - ans

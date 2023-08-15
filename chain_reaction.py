@@ -247,7 +247,7 @@ def main(config_file):
 
     mlflow.end_run()
 
-    print("Experiment complete, please run the following command and visit localhost:5000 in browser: mlflow ui")
+    print("Experiment complete, please run the following command: mlflow ui \nTo view experiments, open a web browser at http://127.0.0.1:5000")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

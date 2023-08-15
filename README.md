@@ -1,10 +1,10 @@
 # Chain Reaction - Experimentation Tool for LLMs
 
-`Chain Reaction` is a Python based LLM experimentation tool that reads instructions of function names to link in a sequence from a `config.yaml`, ingests benchmark question/answer(s) from a `.csv`, and logs/reports info/metrics about the answers from an LLM to `MLFlow`.
+`Chain Reaction` is a simple Python based experimentation tool to quickly iterate on an LLM applications. From a `config.yaml` file, we define which internal variables to log, and which evaluation metrics to compute on a set of benchmark question/answer(s) from a `.csv`. Experiments are logged using `MLFlow` for ease of analysis.
 
-The principle behind the design of `Chain Reaction` is to not have to do code integration with a bot since that itself is changing when one wants to swap out functions like to retrieve or parse in a chain to evaluate its performance in the end. Metrics like cosine similarity, AI similarity, and logprob are used to score the performance of your LLM app. 
+A principle behind the design of `Chain Reaction` is to minimize code integration with an LLM app as one experiments with functions like retrieving, parsing, answering, etc. in a chain. Metrics like cosine similarity, AI similarity are used to evaluate the performance of your LLM app on a set of pre-defined benchmark questions. 
 
-Some assumptions are made:
+Some current limitations and assumptions:
 - chains are sequenced with Python functions and not inner calls of langchain/semantic_kernel
 - input/output of each function must be string or tuple (no dictionary)
 - desired variables to be logged within the scope of a function must be defined as a variable in `locals()` since we are retrieving from the stack
@@ -53,6 +53,31 @@ Example config file below:
 ```yaml
 llm_app_file_name: llm_app
 benchmark_csv: benchmark_QA
+env_file_name: llm_env
+mlflow_experiment_name: Default
+evaluation_metrics:
+  cosine_similarity: true
+  ai_similarity: false
+input_var: raw_msg
+experiment_vars:
+internal_logged_vars:
+  - retrieve_k
+  - context
+  - question_prompt_template
+chain_instruct:
+  - fxn_name: qna_llm
+    in:
+      - raw_msg
+    out:
+      - ans
+
+```
+
+> NOTE: Writing a single main function for your LLM app allows you to simply define your experiment variables in code, and simplify your config file. However, make sure sure to add the variables of interest to log in the `internal_logged_vars`. and currently logging variables in nested functions are not currently supported. Below is an example of a config file that sequences individual functions.
+
+```yaml
+llm_app_file_name: llm_app
+benchmark_csv: benchmark_QA
 env_file_name: llm_pgvector
 mlflow_experiment_name: Default
 mlflow_run_name: run 1
@@ -89,21 +114,6 @@ chain_instruct:
     in:
       - msg
       - prompt_template_b
-    out:
-      - ans
-```
-
-> NOTE: One can instead write a single function for your LLM app and can simply define your experiment variables in code, however, make sure sure to add the variables of interest to log in the `internal_logged_vars`. This simplifies the config file, however, currently logging variables in nested functions are not currently supported.
-
-```yaml
-...
-internal_logged_vars:
-  - prompt_template_1
-  - prompt_template_2
-chain_instruct:
-  - fxn_name: test_two_prompt
-    in:
-      - msg
     out:
       - ans
 ``````
