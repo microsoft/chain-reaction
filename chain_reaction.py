@@ -74,7 +74,6 @@ def main(config_file):
 
     # MLFlow logging
     mlflow_experiment_name = config["mlflow_experiment_name"]
-    mlflow_run_name = config["mlflow_run_name"]
 
     mlflow.set_experiment(experiment_name=mlflow_experiment_name)
 
