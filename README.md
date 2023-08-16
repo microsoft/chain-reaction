@@ -85,13 +85,13 @@ evaluation_metrics:
   ai_similarity: false
 input_var: msg
 experiment_vars:
-  prompt_templates_name: prompt_templates
+  prompt_templates_name: prompt_templates.csv
   prompt_id_a: 0
   prompt_id_b: 1
 internal_logged_vars:
   - engine
 chain_instruct:
-  - fxn_name: get_prompt
+  - fxn_name: get_prompt_template
     in:
       - prompt_id_a
       - prompt_templates_name
@@ -102,8 +102,8 @@ chain_instruct:
       - msg
       - prompt_template_a
     out:
-      - result
-  - fxn_name: get_prompt
+      - intermediate_ans
+  - fxn_name: get_prompt_template
     in:
       - prompt_id_b
       - prompt_templates_name
@@ -113,6 +113,7 @@ chain_instruct:
     in:
       - msg
       - prompt_template_b
+      - intermediate_ans
     out:
       - ans
 ```
