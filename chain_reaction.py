@@ -6,7 +6,9 @@ tuple/single string, but no dictionary
 
 Usage:
 
-python chain_reaction.py
+python chain_reaction.py --config <INSERT_YAML>
+
+where the --config flag is optional
 """
 
 __author__ = "Journey McDowell"
@@ -69,7 +71,7 @@ def main(config_file):
         config = yaml.safe_load(f)
 
     # Use importlib to import the chain functions
-    chain_fxns = importlib.import_module('bot.'+config['llm_app_file_name'])
+    chain_fxns = importlib.import_module('bot.'+config['llm_app_file_name'].split('.')[0])
     chain_instruct = config['chain_instruct']
 
     # MLFlow logging
@@ -78,7 +80,7 @@ def main(config_file):
     mlflow.set_experiment(experiment_name=mlflow_experiment_name)
 
     # Read in benchmark csv
-    df = pd.read_csv('bot/'+config['benchmark_csv']+'.csv')
+    df = pd.read_csv('bot/'+config['benchmark_csv'])
 
     df_result = df[['Question', 'Answer']]
     df_result['generated'] = np.nan
@@ -197,7 +199,7 @@ def main(config_file):
                         if method == 'ai_similarity':
                             for attempt in range(RETRIES):
                                 try:
-                                    ai_similarity_score = AI_similarity(a_true, link[instruction['out'][0]], link[input_var])
+                                    ai_similarity_score = AI_similarity(a_true, link[instruction['out'][0]], link[config['input_var']])
                                     time.sleep(0.1)
                                     df_result[method][i] = ai_similarity_score
                                 except Exception:

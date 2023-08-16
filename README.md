@@ -2,13 +2,13 @@
 
 `Chain Reaction` is a simple Python based experimentation tool to quickly iterate on an LLM applications. From a `config.yaml` file, we define which internal variables to log, and which evaluation metrics to compute on a set of benchmark question/answer(s) from a `.csv`. Experiments are logged using `MLFlow` for ease of analysis.
 
-A principle behind the design of `Chain Reaction` is to minimize code integration with an LLM app as one experiments with functions like retrieving, parsing, answering, etc. in a chain. Metrics like cosine similarity, AI similarity are used to evaluate the performance of your LLM app on a set of pre-defined benchmark questions. 
+A principle behind the design of `Chain Reaction` is to minimize code integration with an LLM app as one experiments with functions like retrieving, parsing, answering, etc. in a chain. Metrics like cosine similarity and AI similarity are used to evaluate the performance of your LLM app on a set of pre-defined benchmark questions. 
 
 Some current limitations and assumptions:
 - chains are sequenced with Python functions and not inner calls of langchain/semantic_kernel
 - input/output of each function must be string or tuple (no dictionary)
 - desired variables to be logged within the scope of a function must be defined as a variable in `locals()` since we are retrieving from the stack
-- desired variables to be logged within the scope of a function must not be lists or dictionaries.
+- desired variables to be logged within the scope of a function must not be lists, dictionaries or objects.
 
 ![](img/chain_reaction_design.png)
 
@@ -24,9 +24,10 @@ chain-reaction
     │---example.env         
     │---llm_app.py                
     │---benchmark_QA.csv         
+    │---prompt_templates.csv         
 ```
 
-*** Note: For specific logic to allow experimenting, add `llm_app.py` separately. Some example connections with custom databases and integrations with openai are presented here: https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python. Please end-to-end examples are shared separately. 
+> NOTE: Some other example connections with custom databases and integrations with openai like `llm_app.py` are presented here: [AzureDataRetrievalAugmentedGenerationSamples](https://github.com/microsoft/AzureDataRetrievalAugmentedGenerationSamples/tree/main/Python). 
 
 1. Install miniconda and create a virtual environment
 ```bash
@@ -51,51 +52,49 @@ conda env update -f environment.yaml
 
 Example config file below:
 ```yaml
-llm_app_file_name: llm_app
-benchmark_csv: benchmark_QA
-env_file_name: llm_env
+lm_app_file_name: llm_app.py
+benchmark_csv: benchmark_QA.csv
+env_file_name: llm_env.env
 mlflow_experiment_name: Default
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
-input_var: raw_msg
+input_var: msg
 experiment_vars:
 internal_logged_vars:
-  - retrieve_k
-  - context
-  - question_prompt_template
+  - intermediate_ans
+  - prompt_template_1
+  - prompt_template_2
 chain_instruct:
-  - fxn_name: qna_llm
+  - fxn_name: test_two_prompt
     in:
-      - raw_msg
+      - msg
     out:
       - ans
-
 ```
 
-> NOTE: Writing a single main function for your LLM app allows you to simply define your experiment variables in code, and simplify your config file. However, make sure sure to add the variables of interest to log in the `internal_logged_vars`. and currently logging variables in nested functions are not currently supported. Below is an example of a config file that sequences individual functions.
+> NOTE: Writing a single main function for your LLM app allows you to simply define your experiment variables in code, and simplify your config file. However, make sure sure to add the variables of interest to log in the `internal_logged_vars`. Currently logging variables in nested functions are not currently supported. Below is an example of a config file that sequences individual functions and allows you to define argument variables from `experiment_vars`.
 
 ```yaml
-llm_app_file_name: llm_app
-benchmark_csv: benchmark_QA
-env_file_name: llm_pgvector
+llm_app_file_name: llm_app.py
+benchmark_csv: benchmark_QA.csv
+env_file_name: llm_env.env
 mlflow_experiment_name: Default
-mlflow_run_name: run 1
 evaluation_metrics:
   cosine_similarity: true
   ai_similarity: false
 input_var: msg
 experiment_vars:
   prompt_templates_name: prompt_templates
-  prompt_id_a: 1
-  prompt_id_b: 2
+  prompt_id_a: 0
+  prompt_id_b: 1
 internal_logged_vars:
   - engine
 chain_instruct:
   - fxn_name: get_prompt
     in:
-      - prompt_templates_name
       - prompt_id_a
+      - prompt_templates_name
     out:
       - prompt_template_a
   - fxn_name: llm_call
@@ -106,8 +105,8 @@ chain_instruct:
       - result
   - fxn_name: get_prompt
     in:
-      - prompt_templates_name
       - prompt_id_b
+      - prompt_templates_name
     out:
       - prompt_template_b
   - fxn_name: llm_call
@@ -116,7 +115,7 @@ chain_instruct:
       - prompt_template_b
     out:
       - ans
-``````
+```
 
 ## Usage
 
@@ -138,15 +137,6 @@ mlflow ui
 ## Adding New Metrics
 
 In `evals.py`, simply add a new function and then import it directly in `chain_reaction.py`. We will need to add some logic to allow a user to specify the new metric in `config.yaml` based on true/false. 
-
-## Maintainer
-
-As the maintainer of this project, please make a few updates:
-
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
 
 ## Contributing
 
