@@ -41,8 +41,8 @@ conda env update -f environment.yaml
 
 | Question      | Answer |
 | ----------- | ----------- |
-| What is the age of the universe? | Scientists estimate that the age of the universe is around 13.8 billion years. |
-| What is the composition of the universe? | The universe is primarily made up of dark energy, dark matter, and ordinary matter, with ordinary matter being the most familiar to us. |
+| Michelle's mom has four children. The first child is named April, the second is named May and the third is named June. What is the name of her fourth child? | Michelle's fourth child is named July. |
+| How do airplane wings allow planes to fly? | The top part of an airplane wing is curved while the bottom is flat, and because the air stream passes from one edge of the wing to the other in equal periods of time, this leads to a lower pressure on the top of the wing than on the bottom of the wing. The accompanying pressure difference (according to Bernoulli's principle) creates the lift force that gives the plane lift and helps it get off the ground. |
 
 7. Update the `config.yaml` with your `benchmark_csv` from the `/bot` folder
 8. Define the `input_var` in `config.yaml` for your LLM message variable name in case your initial function in the chain sequence takes different inputs
