@@ -14,7 +14,7 @@ with open('config.yaml', 'r') as f:
 
 # specify the name of the .env file name 
 env_name = tool_config['env_file_name'] # change to use your own .env file
-config = dotenv_values('bot/'+env_name+'.env')
+config = dotenv_values('bot/'+env_name)
 
 ## Configure openai
 openai.api_type = config["OPENAI_API_TYPE"]
