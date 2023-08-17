@@ -1,6 +1,6 @@
 prompt_id,prompt_template
 0,"Do not answer the question, simply respond with a few words such as listing the current pattern, name of theory to think about,  or scientific law to use."
-1,"Use the following information to answer the question below. 
+1,"Use the following information to help answer the question below. 
 clue: {context} 
 Respond  to the question as if you were in a job interview but do not thank the other for the question."
 2,"Use the context below to answer the question. 

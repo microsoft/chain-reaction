@@ -17,7 +17,7 @@ from langchain.llms import AzureOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
-from langchain.prompts.chat import SystemMessage, HumanMessagePromptTemplate
+from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 import pdb
 
 # Get the absolute path to the .env file in the streamlit_app subdirectory
@@ -63,22 +63,25 @@ def llm_call(msg, prompt_template, context=None):
     
     template = ChatPromptTemplate.from_messages(
         [
-            SystemMessage(content=prompt_template),
+            SystemMessagePromptTemplate.from_template(prompt_template),
             HumanMessagePromptTemplate.from_template("{text}"),
         ]
     )
     chain = LLMChain(llm=llm, prompt=template)
 
     if context == None:
-        messages = template.format_messages(
-            text=msg,
+        ans = chain.run(
+            {
+                'text': msg,
+            }
         )
     else:
-        messages = template.format_messages(
-            context=context,
-            text=msg,
+        ans = chain.run(
+            {
+                'context': context,
+                'text': msg,
+            }
         )
-    ans = chain.run(messages)
     print(ans)
     return ans
 
@@ -97,7 +100,7 @@ if __name__ == '__main__':
     question = "A box has a small hole in it with 2 light bulbs that can come on/off independently. Either bulb can be on 80% of the time. What % of time can both bulbs both be on or off?"
     context = "Bayes Theorem"
     prompt_template = """Use the following information to answer the question below. 
-    Theory: {theory} 
+    Theory: {context} 
     Respond as if you are trying to explain your thought process in a job interview setting.
     """
 
