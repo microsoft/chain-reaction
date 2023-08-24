@@ -9,6 +9,7 @@ Some current limitations and assumptions:
 - input/output of each function must be string or tuple (no dictionary)
 - desired variables to be logged within the scope of a function must be defined as a variable in `locals()` since we are retrieving from the stack
 - desired variables to be logged within the scope of a function must not be lists, dictionaries or objects.
+- Final function output must be a string so metric calculations work
 
 ![](img/chain_reaction_design.png)
 
@@ -52,6 +53,7 @@ conda env update -f environment.yaml
 
 Example config file below:
 ```yaml
+bot_folder: bot
 lm_app_file_name: llm_app.py
 benchmark_csv: benchmark_QA.csv
 env_file_name: llm_env.env
@@ -76,6 +78,7 @@ chain_instruct:
 > NOTE: Writing a single main function for your LLM app allows you to simply define your experiment variables in code, and simplify your config file. However, make sure sure to add the variables of interest to log in the `internal_logged_vars`. Currently logging variables in nested functions are not currently supported. Below is an example of a config file that sequences individual functions and allows you to define argument variables from `experiment_vars`.
 
 ```yaml
+bot_folder: bot
 llm_app_file_name: llm_app.py
 benchmark_csv: benchmark_QA.csv
 env_file_name: llm_env.env
