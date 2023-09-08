@@ -70,8 +70,10 @@ def main(config_file):
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
 
+    bot_folder = config['bot_folder']
+
     # Use importlib to import the chain functions
-    chain_fxns = importlib.import_module('bot.'+config['llm_app_file_name'].split('.')[0])
+    chain_fxns = importlib.import_module(bot_folder+'.'+config['llm_app_file_name'].split('.')[0])
     chain_instruct = config['chain_instruct']
 
     # MLFlow logging
@@ -80,7 +82,7 @@ def main(config_file):
     mlflow.set_experiment(experiment_name=mlflow_experiment_name)
 
     # Read in benchmark csv
-    df = pd.read_csv('bot/'+config['benchmark_csv'])
+    df = pd.read_csv(bot_folder+'/'+config['benchmark_csv'])
 
     df_result = df[['Question', 'Answer']]
     df_result['generated'] = np.nan
@@ -182,7 +184,7 @@ def main(config_file):
                         if method == 'cosine_similarity':
                             for attempt in range(RETRIES):
                                 try:
-                                    cosine_similarity_score = get_cosine_similarity(a_true, link[instruction['out'][0]])
+                                    cosine_similarity_score = get_cosine_similarity(a_true, link[instruction['out'][0]], config_file)
                                     time.sleep(0.1)
                                     df_result[method][i] = np.round(cosine_similarity_score, 4)
                                 except Exception:
@@ -199,7 +201,7 @@ def main(config_file):
                         if method == 'ai_similarity':
                             for attempt in range(RETRIES):
                                 try:
-                                    ai_similarity_score = AI_similarity(a_true, link[instruction['out'][0]], link[config['input_var']])
+                                    ai_similarity_score = AI_similarity(a_true, link[instruction['out'][0]], link[config['input_var']], config_file)
                                     time.sleep(0.1)
                                     df_result[method][i] = ai_similarity_score
                                 except Exception:
