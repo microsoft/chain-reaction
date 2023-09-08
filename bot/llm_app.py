@@ -21,8 +21,9 @@ from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessageProm
 import glob
 import pdb
 
-# Find file name in folder that ends with *.env
-env_files = [file for file in glob.glob("*.env") if file != "example.env"]  
+# Find file name in same folder as this file that ends with *.env
+current_dir = os.path.dirname(os.path.abspath(__file__))  
+env_files = [file for file in glob.glob(os.path.join(current_dir, '*.env')) if "example.env" not in file]  
 
 # Get the absolute path to the .env file in the current folder
 try:
