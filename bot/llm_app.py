@@ -18,10 +18,19 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+import glob
 import pdb
 
-# Get the absolute path to the .env file in the streamlit_app subdirectory
-env_name = os.path.join(os.path.dirname(__file__), "llm_env.env")
+# Find file name in same folder as this file that ends with *.env
+current_dir = os.path.dirname(os.path.abspath(__file__))  
+env_files = [file for file in glob.glob(os.path.join(current_dir, '*.env')) if "example.env" not in file]  
+
+# Get the absolute path to the .env file in the current folder
+try:
+    env_name = os.path.join(os.path.dirname(__file__), env_files[0])
+except:
+    folder = os.path.basename(os.getcwd())
+    raise Exception("No *.env file found in /{}. Please create one. If you've added your keys to example.env, please use a different file name because we want to prevent accidental commits of keys in git".format(folder))
 
 # Load environment variables from the .env file
 config = dotenv_values(env_name)
